@@ -20,3 +20,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/user-signUp', [UserController::class, 'userSignUp'])->name('userSignUp');
 Route::post('/user-login', [UserController::class, 'userLogin'])->name('userLogin');
+Route::post('/otp-forgetPassword', [UserController::class, 'userForgetOTP'])->name('userForgetOTP');
+Route::post('/otp-verify', [UserController::class, 'OTPverify'])->name('OTPverify');

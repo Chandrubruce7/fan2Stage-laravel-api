@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Hash;
+use App\Services\EmailService;
+
 
 class UserController extends Controller
 {
@@ -95,6 +97,78 @@ class UserController extends Controller
             return response()->json(["status" => "failed", "success" => false, "message" => "Unable to login. Email doesn't exist."]);
         }
     }
+
+    // ------------------ [ User Forget Password ] ---------------------
+
+    public function userForgetOTP(Request $request) {
+
+        $validator          =       Validator::make($request->all(),
+        [
+            "phone"             =>          "required",
+        ]
+    );
+
+    if($validator->fails()) {
+        return response()->json(["status" => "failed", "validation_error" => $validator->errors()]);
+    }
+
+    // check if entered email exists in db
+    $phone_status       =       User::where("phone", $request->phone)->first();
+    
+    if(!is_null($phone_status)){
+
+        $randomNumber = random_int(100000, 999999);
+
+        User::where('phone', $request->phone)
+            ->update(['otp' => $randomNumber]);
+            
+        $user           =       $this->userDetail($phone_status->email);
+
+        // (new EmailService())->sendForgetPasswordMail($user);
+
+        return response()->json(["status" => $this->status_code, "success" => true, "message" => "OTP sent Successfully", "data" => $user]);
+        
+        }
+        else {
+            return response()->json(["status" => "failed", "success" => false, "message" => "Mobile Number doesn't exist."]);
+        }
+    }
+
+    public function OTPverify(Request $request) {
+
+        $validator          =       Validator::make($request->all(),
+        [
+            "phone"           =>          "required",
+            "otp"             =>          "required",
+        ]
+    );
+
+    if($validator->fails()) {
+        return response()->json(["status" => "failed", "validation_error" => $validator->errors()]);
+    }
+
+    $otp_status = User::where('phone',$request->phone)->where('otp',$request->otp)->first();
+
+    if(!is_null($otp_status)){
+
+       User::where('phone', $otp_status->phone)
+            ->update(['otp' => null]);
+
+       $user           =       $this->userDetail($otp_status->email);
+
+        return response()->json(["status" => $this->status_code, "success" => true, "message" => "OTP verified Successfully", "data" => $user]);
+
+    } else {
+        return response()->json(["status" => "failed", "success" => false, "message" => "Invalid OTP !."]);
+    }
+
+
+    }
+
+    
+
+
+
 
     // ------------------ [ User Detail ] ---------------------
     public function userDetail($email) {
